@@ -1,14 +1,20 @@
-import json
+#import pymysql
+from config import host, user, password, db_name
 from aiogram import types, Dispatcher
+from aiogram.types import ReplyKeyboardMarkup
 from loader import dp, bot
 #from keyboards.main_menu import schedule_buttons, start_menu_kb
-from keyboards.date import str_maker, date, f_monday, today
-from db.lessons import lesson, lecture, string_f
-from keyboards.registration import faculty_kb, year_kb, menu_cd, group_kb, change_to_schedule_kb, schedule_kb
+from keyboards.date import date
+#from db.lessons import lesson, lecture, string_f
+from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, group_kb, change_to_schedule_kb
+from db.functions import group_id_creator
 from typing import Union
+from db.database import check_student, create_connection, execute_read_query, join_maker
 
 
 
+global connection
+connection = create_connection(host, user, password, db_name)
 
 
 
@@ -19,13 +25,15 @@ async def menu(message : types.Message):
     #markup = await start_menu_kb()
     #await bot.send_message(message.chat.id, "Привет! Я помогу узнать расписание)", reply_markup=markup)
 
+
+
 async def faculty_list(message : Union[types.Message, types.CallbackQuery], **kwargs):
     markup = await faculty_kb()
-    global user_id
+    global tg_id
     global first_name
     global username
 
-    user_id = message.from_user.id
+    tg_id = message.from_user.id
     first_name = message.from_user.first_name
     username = message.from_user.username
 
@@ -50,41 +58,21 @@ async def group_list(query: types.CallbackQuery, faculty, year, **kwargs):
 
 
 async def schedule_menu(message : Union[types.Message, types.CallbackQuery], faculty, year, group, **kwargs):
-    
-    
 
-
+    global group_id
+    group_id = group_id_creator(faculty, year, group)
+    
     markup = await change_to_schedule_kb(faculty, year, group)
-    user_list = [user_id, username, faculty, year, group]
 
-    user_dict = {
-        'user_id': f'{user_id}',
-        'username': f'{first_name}',
-        'faculty': f'{faculty}',
-        'year': f'{year}',
-        'group': f'{group}',
-    }
-    print('dict:', user_dict)
-   
-   
-    # json.dump(user_dict, open('users.json', 'w'))
+    
 
 
-    # with open('users.json') as f:
-    #     a = json.load(f)
-
-    # print('json', a) 
+    group_id = check_student(connection, tg_id, group_id, first_name)
 
 
-    #Внести пользователя в базу данных
 
-    # data = json.loads(lectures)
-    # with open("schedule.json", "w") as f:
-    # json.dump(data, f, indent=3)
-
- 
-
-    print(type(message))
+    
+    
 
     await message.message.edit_text("Готово!")
     await bot.send_message(message.from_user.id, "Меню:", reply_markup=markup)
@@ -95,18 +83,7 @@ async def schedule_menu(message : Union[types.Message, types.CallbackQuery], fac
 
 
 
-
-    #print(user_list)
-
-
-    # user_id = query.message.from_user.id
-    # user_name = query.message.from_user.username
-    # print(user_id, user_name)
-
-# async def user_data(query: types.CallbackQuery, faculty, year, group, **kwargs):
-#     data = await query.data
-#     print(data)
-
+    
 
 
 @dp.callback_query_handler(menu_cd.filter())
@@ -137,34 +114,127 @@ async def navigate(query : types.CallbackQuery, callback_data: dict):
 
 @dp.message_handler(content_types=['text'])
 async def message(message : types.Message):
-    week_days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
-    week_days_eng = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    schedule_text = ''
+####################################################################
+    async def schedule_kb():
+    
+        markup = ReplyKeyboardMarkup(resize_keyboard=True)
+        
+        week_days = []
+    
+        query = "SELECT week_day_name FROM `calendar`"
+        results = execute_read_query(connection, query)
+        for result in results:
+            week_days.append(result['week_day_name']) 
+        
+        markup.add(*week_days).insert('Назад')
+        
+        return markup
+#########################################################################
+    def week_day_id_maker(day_of_week):
+        week_days = []
+        query = "SELECT week_day_name FROM `calendar`"
+        results = execute_read_query(connection, query)
+        for result in results:
+            week_days.append(result['week_day_name'])
+        i=0 
+        for week_day in week_days:
+            i+= 1
+            if week_day == day_of_week:
+                return i
+######################################################################
+    def lecture(lecture_dict, date):
+        lecture_dict = eval(row['lesson_name'])
+        keys_list = lecture_dict.keys()
+        for key in keys_list:
+            if date in lecture_dict[key]:
+                return key
+        
+######################################################################
+    markup = await schedule_kb()
+    
+
+
 
     if message.text == 'Посмотреть расписание':
-        markup = await schedule_kb()
         await bot.send_message(message.from_user.id, "Привет!", reply_markup=markup)
-        for day in week_days:
-            if day == message.text:
-                await bot.send_message(message.chat.id, string_f(lesson(week_days_eng[week_days.index(day)], lecture(dates[week_days.index(day)]))))
+    elif message.text in ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']:
+        week_day_id = week_day_id_maker(message.text)
+        current_date = date(week_day_id-1)
+        
+        rows = join_maker(connection, group_id , week_day_id)
+        schedule_text = ''
+        for row in rows:
+            if '{' in row['lesson_name']:
+                string = row['lesson_time'] + '\n' + 'Лекция' + '\n' + lecture(row['lesson_name'], current_date) + '\n\n'
+                schedule_text += string 
+            else:
+                string = row['lesson_time'] + '\n' + row['lesson_name'] + '\n\n'
+                schedule_text = '📅 '+ message.text + ' ' + current_date  + '\n\n' + string
+        await bot.send_message(message.from_user.id, schedule_text)
+
+                
+                    
+
+
+                
+            
+
+
+
+
+
+   
+        
+    
+    
+    
+    
+        
+    
+    
+    
+
+
+
+
+    
+                
+
+
+    
+    
+
+        
+    
+    
+    
+
+
+
+    # week_days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+    # week_days_eng = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+    # if message.text == 'Посмотреть расписание':
+    #     print('yes')
+        # markup = await schedule_kb()
+        # await bot.send_message(message.from_user.id, "Привет!", reply_markup=markup)
+        # for day in week_days:
+        #     if day == message.text:
+        #         await bot.send_message(message.chat.id, string_f(lesson(week_days_eng[week_days.index(day)], lecture(dates[week_days.index(day)]))))
 
     
     
 
     # levels = {
-    #    "Посмотреть расписание": schedule_buttons,
-    #    "Назад": start_menu_kb,
+    #    c: schedule_kb,
+    #    "Назад": change_to_schedule_kb,
     # }
     # week_days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
     # week_days_eng = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 
-    # def creating_dates():
-    #     dates = []
-    #     today_day = today()
-
-    #     for i in range(len(week_days)):                                           #Creating buttons
-    #         dates.append(str_maker(date(f_monday(today_day), i, today_day)))
-    #     return dates
+    
 
 
 
@@ -178,7 +248,7 @@ async def message(message : types.Message):
 
     # if message.text == "Посмотреть расписание" or message.text == "Назад":
     #     current_level_function = levels[message.text]
-    #     markup = await current_level_function()
+    #     markup = await current_level_function(faculty, year, group)
     #     await bot.send_message(message.chat.id, text, reply_markup=markup)
     # else:
     #     dates = creating_dates()
