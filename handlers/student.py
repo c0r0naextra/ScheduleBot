@@ -64,15 +64,8 @@ async def schedule_menu(message : Union[types.Message, types.CallbackQuery], fac
     
     markup = await change_to_schedule_kb(faculty, year, group)
 
-    
+    #group_id = check_student(connection, tg_id, group_id, first_name)
 
-
-    group_id = check_student(connection, tg_id, group_id, first_name)
-
-
-
-    
-    
 
     await message.message.edit_text("Готово!")
     await bot.send_message(message.from_user.id, "Меню:", reply_markup=markup)
@@ -149,6 +142,8 @@ async def message(message : types.Message):
         for key in keys_list:
             if date in lecture_dict[key]:
                 return key
+        else:
+            return '-'
         
 ######################################################################
     markup = await schedule_kb()
@@ -163,14 +158,16 @@ async def message(message : types.Message):
         current_date = date(week_day_id-1)
         
         rows = join_maker(connection, group_id , week_day_id)
-        schedule_text = ''
+        schedule_text = '📅 '+ message.text + ' ' + current_date  + '\n\n'
         for row in rows:
             if '{' in row['lesson_name']:
                 string = row['lesson_time'] + '\n' + 'Лекция' + '\n' + lecture(row['lesson_name'], current_date) + '\n\n'
-                schedule_text += string 
+                schedule_text += string      
+                
             else:
                 string = row['lesson_time'] + '\n' + row['lesson_name'] + '\n\n'
-                schedule_text = '📅 '+ message.text + ' ' + current_date  + '\n\n' + string
+                schedule_text += string
+                
         await bot.send_message(message.from_user.id, schedule_text)
 
                 
