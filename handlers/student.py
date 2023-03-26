@@ -3,9 +3,9 @@ from aiogram import types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from loader import dp, bot
 from keyboards.date import calendar, date
-from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, group_kb, change_to_schedule_kb, default_kb
+from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, change_to_schedule_kb, default_kb
 from typing import Union
-from db.database import create_connection, join_maker, schedule_kb, send_message, week_day_id_maker, group_id_creator, faculty_year_group_returner
+from db.database import create_connection, join_maker, schedule_kb, send_message, week_day_id_maker, group_id_creator, year_id_creator, group_kb, faculty_year_group_returner
 
 
 
@@ -40,7 +40,8 @@ async def year_list(query: types.CallbackQuery, faculty, **kwargs):
 
 
 async def group_list(query: types.CallbackQuery, faculty, year, **kwargs):
-    markup = await group_kb(faculty, year)
+    year_id = year_id_creator(faculty, year)
+    markup = await group_kb(year_id, faculty, year, connection)
     await query.message.edit_reply_markup(markup)
 
 
@@ -52,7 +53,7 @@ async def schedule_menu(message : Union[types.Message, types.CallbackQuery], fac
 
     await message.message.edit_text("Готово!")
     await bot.send_message(message.from_user.id, "Меню:", reply_markup=markup)
-
+    
     
     
 @dp.callback_query_handler(menu_cd.filter())
