@@ -49,18 +49,6 @@ async def year_kb(faculty):
     return markup
 
 
-async def group_kb(faculty, year):
-    LEVEL = 2
-    markup = InlineKeyboardMarkup(row_width=6)
-    groups = 36
-
-    for group in range(1, groups):
-        button_text = group
-        callback_data = make_cd(level=LEVEL+1, faculty=faculty, year=year, group=button_text)
-        markup.insert(InlineKeyboardMarkup(text=button_text, callback_data=callback_data)) 
-    return markup
-    
-
 
 async def change_to_schedule_kb():        
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
