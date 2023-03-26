@@ -93,7 +93,6 @@ async def group_kb(year_id, faculty, year, connection):
 
     i = faculty_list.index(faculty)
     group_title = year + faculty_id[i]
-    print(group_title)
 
     with connection.cursor() as cursor:   
         query = "SELECT id FROM `student_group` WHERE title = (%s)"
