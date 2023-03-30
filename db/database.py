@@ -36,8 +36,7 @@ def join_maker(connection, group_id, day_id):
         lesson.lesson_time,
         lesson.auditorium, 
         lesson_name.title, 
-        calendar.title, 
-        student_group.title 
+        calendar.title
         FROM 
         timetable
         INNER JOIN student_group on timetable.group_id = student_group.id
@@ -45,9 +44,14 @@ def join_maker(connection, group_id, day_id):
         INNER JOIN lesson on timetable.lesson_id = lesson.id
         INNER JOIN lesson_name on timetable.lesson_name_id = lesson_name.id
         WHERE student_group.id = (%s) and calendar.id = (%s)'''
-    
         cursor.execute(query, (group_id, day_id))
         rows = cursor.fetchall()
+        # row = cursor.fetchone()   chatGPT remark
+        # if row:
+        #     rows = [row]
+        # else:
+        #     rows = []
+        # print(type(rows))
     return rows
 
 def year_id_creator(faculty, year):
@@ -100,8 +104,8 @@ async def group_kb(year_id, faculty, year, connection):
         rows = cursor.fetchall()
 
     years=len(rows)
-    for year in range(1, years+1):
-        button_text = year
+    for current_year in range(1, years+1):
+        button_text = current_year
         callback_data = make_cd(level=LEVEL+1, faculty=faculty, year=year, group=button_text)
         markup.insert(InlineKeyboardMarkup(text=button_text, callback_data=callback_data)) 
     return markup
@@ -149,6 +153,7 @@ def send_message(connection, day_of_week, group_id, week_flag):
         week_day_id = week_day_id_maker(connection, day_of_week)
         current_date = date(week_day_id, week_flag) 
         rows = join_maker(connection, group_id, week_day_id)
+        print("I'm here",rows)
         schedule_text = '📆 '+ day_of_week + calendar(current_date)  + '\n\n'
 
         for row in rows:

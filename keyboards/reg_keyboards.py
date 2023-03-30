@@ -36,7 +36,7 @@ async def year_kb(faculty):
     markup = InlineKeyboardMarkup()
     
     if faculty == 'Medical':
-        years = 3
+        years = 5
     elif faculty == 'Стоматологический' or faculty == 'Фармацевтический':
         years = 5
     else:
