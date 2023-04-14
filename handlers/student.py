@@ -31,7 +31,7 @@ async def faculty_list(message : types.Message, **kwargs):
     username = message.from_user.username
 
     await bot.send_message(message.from_user.id, "Приветствую!", reply_markup=help_keyboard)
-    await bot.send_message(message.from_user.id, "Для начала пройди регистрацию", reply_markup=markup)
+    await bot.send_message(message.from_user.id, "Для начала пройди регистрацию (факультет, курс, группа)", reply_markup=markup)
    
 
 async def year_list(query: types.CallbackQuery, faculty, **kwargs):

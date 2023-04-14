@@ -36,7 +36,7 @@ def join_maker(connection, group_id, day_id):
         lesson.lesson_time,
         lesson.auditorium, 
         lesson_name.title, 
-        calendar.title
+        calendar.day_of_week_name
         FROM 
         timetable
         INNER JOIN student_group on timetable.group_id = student_group.id
@@ -46,12 +46,6 @@ def join_maker(connection, group_id, day_id):
         WHERE student_group.id = (%s) and calendar.id = (%s)'''
         cursor.execute(query, (group_id, day_id))
         rows = cursor.fetchall()
-        # row = cursor.fetchone()   chatGPT remark
-        # if row:
-        #     rows = [row]
-        # else:
-        #     rows = []
-        # print(type(rows))
     return rows
 
 def year_id_creator(faculty, year):
@@ -116,11 +110,11 @@ async def group_kb(year_id, faculty, year, connection):
 async def schedule_kb(connection):
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     week_days = []
-    query = "SELECT title FROM `calendar`"
+    query = "SELECT day_of_week_name FROM `calendar`"
     results = execute_read_query(connection, query)
 
     for result in results:
-        week_days.append(result['title']) 
+        week_days.append(result['day_of_week_name']) 
     markup.add(*week_days).insert('Назад')
     return markup
 
@@ -128,10 +122,10 @@ async def schedule_kb(connection):
 
 def week_day_id_maker(connection, day_of_week):
     week_days = []
-    query = "SELECT title FROM `calendar`"
+    query = "SELECT day_of_week_name FROM `calendar`"
     results = execute_read_query(connection, query)
     for result in results:
-        week_days.append(result['title'])
+        week_days.append(result['day_of_week_name'])
     i=0 
     for week_day in week_days:
         i+= 1
@@ -153,7 +147,6 @@ def send_message(connection, day_of_week, group_id, week_flag):
         week_day_id = week_day_id_maker(connection, day_of_week)
         current_date = date(week_day_id, week_flag) 
         rows = join_maker(connection, group_id, week_day_id)
-        print("I'm here",rows)
         schedule_text = '📆 '+ day_of_week + calendar(current_date)  + '\n\n'
 
         for row in rows:
@@ -165,6 +158,10 @@ def send_message(connection, day_of_week, group_id, week_flag):
                 if not lecture_names:
                     continue
                 for lecture_name in lecture_names:
+                    if 'Ю-205' in lecture_name:
+                        lecture_name += '\nул. Митрофана Седина,4, морфокорпус, 2 этаж'
+                    elif 'А-301' in lecture_name:
+                        lecture_name += '\nул. Митрофана Седина,4, главный корпус, 3 этаж'
                     string = row['lesson_time'] + '\n' + 'Лекция' + '\n' + lecture_name + '\n' + auditorium + '\n'
                     schedule_text += string
                     if len(lecture_names) == 2:
