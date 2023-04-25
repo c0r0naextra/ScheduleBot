@@ -23,7 +23,7 @@ async def menu(message : types.Message):
     global week_flag
     week_flag = False
     chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
-    if chat_member.status == "member" or chat_member.status == "creator":
+    if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
         await faculty_list(message)
         return True
         # Allow the user to use the bot
@@ -43,7 +43,7 @@ async def process_subscribe_callback(callback_query: types.CallbackQuery, state:
     chat_id = callback_query.from_user.id
     # Check if user has joined the channel
     chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=chat_id)
-    if chat_member.status == "member" or chat_member.status == "creator":
+    if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
         await bot.answer_callback_query(callback_query.id, text="Thank you for subscribing!")
         await state.finish()
         # Allow the user to use the bot
@@ -116,7 +116,7 @@ async def message(message : types.Message):
     keyboard = await change_to_schedule_kb()
 
     chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
-    if chat_member.status == "member" or chat_member.status == "creator":
+    if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
         help_text = "Это бот для получения расписания. Введите /start, чтобы начать."
         if message.text == 'Помощь':
             await bot.send_message(message.from_user.id, help_text)
