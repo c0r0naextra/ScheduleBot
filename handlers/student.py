@@ -1,5 +1,4 @@
-import logging
-from config import host, user, password, db_name, CHANNEL_ID, WEBHOOK_URL
+from config import host, user, password, db_name, CHANNEL_ID
 from aiogram import types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 from loader import dp, bot

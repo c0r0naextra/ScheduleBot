@@ -2,8 +2,7 @@ from aiogram.utils import executor
 from keyboards import reg_keyboards
 from loader import dp
 from handlers import student
-import os
-from config import WEBHOOK_PATH, WEBHOOK_URL, host, WEBAPP_PORT
+
 
 
 if __name__ == '__main__':
