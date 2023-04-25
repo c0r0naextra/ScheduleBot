@@ -1,22 +1,58 @@
-from config import host, user, password, db_name
+import logging
+from config import host, user, password, db_name, CHANNEL_ID, WEBHOOK_URL
 from aiogram import types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 from loader import dp, bot
-from keyboards.date import calendar, date
 from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, change_to_schedule_kb, default_kb
 from typing import Union
-from db.database import create_connection, join_maker, schedule_kb, send_message, week_day_id_maker, group_id_creator, year_id_creator, group_kb, faculty_year_group_returner
-
+from db.database import create_connection, schedule_kb, send_message, group_id_creator, year_id_creator, group_kb
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
 
 
 global connection
 connection = create_connection(host, user, password, db_name)
 
+
+#Define states for the conversation
+class SubscribeState(StatesGroup):
+    waiting_for_subscription = State()
+
+
 @dp.message_handler(commands=['start'])
 async def menu(message : types.Message):
     global week_flag
     week_flag = False
-    await faculty_list(message)
+    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
+    if chat_member.status == "member" or chat_member.status == "creator":
+        await faculty_list(message)
+        return True
+        # Allow the user to use the bot
+        # ...
+    else:
+        # Ask the user to join the channel
+        markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(text='Ссылка на канал', url='https://t.me/+JuOvXXesnpw2NDZi')]
+            ])
+        await message.reply("Для использования бота необходимо подписаться на канал", reply_markup=markup)
+        # Set the custom state
+        await SubscribeState.waiting_for_subscription.set()
+        
+
+@dp.callback_query_handler(state=SubscribeState.waiting_for_subscription)
+async def process_subscribe_callback(callback_query: types.CallbackQuery, state: FSMContext):
+    chat_id = callback_query.from_user.id
+    # Check if user has joined the channel
+    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=chat_id)
+    if chat_member.status == "member" or chat_member.status == "creator":
+        await bot.answer_callback_query(callback_query.id, text="Thank you for subscribing!")
+        await state.finish()
+        # Allow the user to use the bot
+        # ...
+    else:
+        await bot.answer_callback_query(callback_query.id, text="Please subscribe to the channel first!")
+
+
 
 
 async def faculty_list(message : types.Message, **kwargs):
@@ -80,27 +116,45 @@ async def message(message : types.Message):
     markup = await schedule_kb(connection)
     keyboard = await change_to_schedule_kb()
 
-    help_text = "Это бот для получения расписания. Введите /start, чтобы начать."
-    if message.text == 'Помощь':
-        await bot.send_message(message.from_user.id, help_text)
-
-    global week_flag
-    if message.text == 'Текущая неделя':
-        await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
-    elif message.text == 'Следующая неделя':
-        week_flag = True
-        await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
-    elif message.text in ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']:
-        schedule_text = send_message(connection, message.text, group_id, week_flag)
-        await bot.send_message(message.from_user.id, schedule_text)
-    elif message.text == 'Назад':
-        week_flag = False
-        await bot.send_message(message.from_user.id, 'Меню:', reply_markup=keyboard)
+    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
+    if chat_member.status == "member" or chat_member.status == "creator":
+        help_text = "Это бот для получения расписания. Введите /start, чтобы начать."
+        if message.text == 'Помощь':
+            await bot.send_message(message.from_user.id, help_text)
+    
+        global week_flag
+        if message.text == 'Текущая неделя':
+            await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
+        elif message.text == 'Следующая неделя':
+            week_flag = True
+            await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
+        elif message.text in ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']:
+            schedule_text = send_message(connection, message.text, group_id, week_flag)
+            await bot.send_message(message.from_user.id, schedule_text)
+        elif message.text == 'Назад':
+            week_flag = False
+            await bot.send_message(message.from_user.id, 'Меню:', reply_markup=keyboard)
+        return True
+        # Allow the user to use the bot
+        # ...
+    else:
+        # Ask the user to join the channel
+        markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
+            [InlineKeyboardButton(text='Ссылка на канал', url='https://t.me/+JuOvXXesnpw2NDZi')]
+            ])
+        await message.reply("Please subscribe to the channel first!", reply_markup=markup)
+        # Set the custom state
+        await SubscribeState.waiting_for_subscription.set()
 
 
         
     
-    
+# async def on_startup(dp):
+#     await bot.set_webhook(WEBHOOK_URL)
+
+# async def on_shutdown(dp):
+#     await bot.delete_webhook()
+#     connection.close()
 
 
 
