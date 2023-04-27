@@ -38,18 +38,18 @@ async def menu(message : types.Message):
         await SubscribeState.waiting_for_subscription.set()
         
 
-@dp.callback_query_handler(state=SubscribeState.waiting_for_subscription)
-async def process_subscribe_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    chat_id = callback_query.from_user.id
-    # Check if user has joined the channel
-    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=chat_id)
-    if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
-        await bot.answer_callback_query(callback_query.id, text="Thank you for subscribing!")
-        await state.finish()
-        # Allow the user to use the bot
-        # ...
-    else:
-        await bot.answer_callback_query(callback_query.id, text="Please subscribe to the channel first!")
+# @dp.callback_query_handler(state=SubscribeState.waiting_for_subscription)
+# async def process_subscribe_callback(callback_query: types.CallbackQuery, state: FSMContext):
+#     chat_id = callback_query.from_user.id
+#     # Check if user has joined the channel
+#     chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=chat_id)
+#     if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
+#         await bot.answer_callback_query(callback_query.id, text="Thank you for subscribing!")
+#         await state.finish()
+#         # Allow the user to use the bot
+#         # ...
+#     else:
+#         await bot.answer_callback_query(callback_query.id, text="Please subscribe to the channel first!")
 
 
 
@@ -145,45 +145,3 @@ async def message(message : types.Message):
         # Set the custom state
         await SubscribeState.waiting_for_subscription.set()
 
-
-        
-    
-# async def on_startup(dp):
-#     await bot.set_webhook(WEBHOOK_URL)
-
-# async def on_shutdown(dp):
-#     await bot.delete_webhook()
-#     connection.close()
-
-
-
-   
-        
-    
-    
-    
-    
-        
-    
-    
-    
-
-
-
-
-    
-                
-
-
-    
-    
-
-        
-    
-    
-    
-
-
-
-    
-    
