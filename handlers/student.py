@@ -13,23 +13,23 @@ global connection
 connection = create_connection(host, user, password, db_name)
 
 
-def check_subscription(chat_member):
-    print(chat_member)
-    if chat_member['status'] != 'left':
-        return True
-    else: 
-        return False
+# def check_subscription(chat_member):
+#     print(chat_member)
+#     if chat_member['status'] != 'left':
+#         return True
+#     else: 
+#         return False
 
 
 @dp.message_handler(commands=['start'])
 async def menu(message : types.Message):
-    if check_subscription(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)):
-        global week_flag
-        week_flag = False
-        await faculty_list(message)
-    else:
-        markup = await channel_sub_btn()
-        await bot.send_message(message.from_user.id, "Для использования бота необходимо подписаться на канал", reply_markup=markup)
+    # if check_subscription(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)):
+    global week_flag
+    week_flag = False
+    await faculty_list(message)
+    # else:
+    #     markup = await channel_sub_btn()
+    #     await bot.send_message(message.from_user.id, "Для использования бота необходимо подписаться на канал", reply_markup=markup)
 
 
 async def faculty_list(message : types.Message, **kwargs):
@@ -93,26 +93,26 @@ async def message(message : types.Message):
     markup = await schedule_kb(connection)
     keyboard = await change_to_schedule_kb()
     
-    if check_subscription(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)):
-        help_text = "Это бот для получения расписания. Введите /start, чтобы начать."
-        if message.text == 'Помощь':
-            await bot.send_message(message.from_user.id, help_text)
-        
-        global week_flag
-        if message.text == 'Текущая неделя':
-            await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
-        elif message.text == 'Следующая неделя':
-            week_flag = True
-            await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
-        elif message.text in ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']:
-            schedule_text = send_message(connection, message.text, group_id, week_flag)
-            await bot.send_message(message.from_user.id, schedule_text)
-        elif message.text == 'Назад':
-            week_flag = False
-            await bot.send_message(message.from_user.id, 'Меню:', reply_markup=keyboard)
-    else:
-        markup = await channel_sub_btn()
-        await bot.send_message(message.from_user.id, "Для использования бота необходимо подписаться на канал", reply_markup=markup)
+    # if check_subscription(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)):
+    help_text = "Это бот для получения расписания. Введите /start, чтобы начать."
+    if message.text == 'Помощь':
+        await bot.send_message(message.from_user.id, help_text)
+    
+    global week_flag
+    if message.text == 'Текущая неделя':
+        await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
+    elif message.text == 'Следующая неделя':
+        week_flag = True
+        await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
+    elif message.text in ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']:
+        schedule_text = send_message(connection, message.text, group_id, week_flag)
+        await bot.send_message(message.from_user.id, schedule_text)
+    elif message.text == 'Назад':
+        week_flag = False
+        await bot.send_message(message.from_user.id, 'Меню:', reply_markup=keyboard)
+    # else:
+    #     markup = await channel_sub_btn()
+    #     await bot.send_message(message.from_user.id, "Для использования бота необходимо подписаться на канал", reply_markup=markup)
 
 
 
