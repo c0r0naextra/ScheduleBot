@@ -1,57 +1,35 @@
 from config import host, user, password, db_name, CHANNEL_ID
 from aiogram import types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from loader import dp, bot
-from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, change_to_schedule_kb, default_kb
+from keyboards.date import calendar, date
+from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, change_to_schedule_kb, default_kb, channel_sub_btn
 from typing import Union
-from db.database import create_connection, schedule_kb, send_message, group_id_creator, year_id_creator, group_kb
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from db.database import create_connection, join_maker, schedule_kb, send_message, week_day_id_maker, group_id_creator, year_id_creator, group_kb, faculty_year_group_returner
+
 
 
 global connection
 connection = create_connection(host, user, password, db_name)
 
 
-#Define states for the conversation
-class SubscribeState(StatesGroup):
-    waiting_for_subscription = State()
+def check_subscription(chat_member):
+    print(chat_member)
+    if chat_member['status'] != 'left':
+        return True
+    else: 
+        return False
 
 
 @dp.message_handler(commands=['start'])
 async def menu(message : types.Message):
-    global week_flag
-    week_flag = False
-    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
-    if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
+    if check_subscription(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)):
+        global week_flag
+        week_flag = False
         await faculty_list(message)
-        return True
-        # Allow the user to use the bot
-        # ...
     else:
-        # Ask the user to join the channel
-        markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-            [InlineKeyboardButton(text='Ссылка на канал', url='https://t.me/+JuOvXXesnpw2NDZi')]
-            ])
-        await message.reply("Для использования бота необходимо подписаться на канал", reply_markup=markup)
-        # Set the custom state
-        await SubscribeState.waiting_for_subscription.set()
-        
-
-# @dp.callback_query_handler(state=SubscribeState.waiting_for_subscription)
-# async def process_subscribe_callback(callback_query: types.CallbackQuery, state: FSMContext):
-#     chat_id = callback_query.from_user.id
-#     # Check if user has joined the channel
-#     chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=chat_id)
-#     if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
-#         await bot.answer_callback_query(callback_query.id, text="Thank you for subscribing!")
-#         await state.finish()
-#         # Allow the user to use the bot
-#         # ...
-#     else:
-#         await bot.answer_callback_query(callback_query.id, text="Please subscribe to the channel first!")
-
-
+        markup = await channel_sub_btn()
+        await bot.send_message(message.from_user.id, "Для использования бота необходимо подписаться на канал", reply_markup=markup)
 
 
 async def faculty_list(message : types.Message, **kwargs):
@@ -67,7 +45,7 @@ async def faculty_list(message : types.Message, **kwargs):
 
     await bot.send_message(message.from_user.id, "Приветствую!", reply_markup=help_keyboard)
     await bot.send_message(message.from_user.id, "Для начала пройди регистрацию (факультет, курс, группа)", reply_markup=markup)
-   
+
 
 async def year_list(query: types.CallbackQuery, faculty, **kwargs):
     markup = await year_kb(faculty)
@@ -88,9 +66,9 @@ async def schedule_menu(message : Union[types.Message, types.CallbackQuery], fac
 
     await message.message.edit_text("Готово!")
     await bot.send_message(message.from_user.id, "Меню:", reply_markup=markup)
-    
-    
-    
+
+
+
 @dp.callback_query_handler(menu_cd.filter())
 async def navigate(query : types.CallbackQuery, callback_data: dict):
     await query.answer()
@@ -114,13 +92,12 @@ async def navigate(query : types.CallbackQuery, callback_data: dict):
 async def message(message : types.Message):
     markup = await schedule_kb(connection)
     keyboard = await change_to_schedule_kb()
-
-    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
-    if chat_member.status == "member" or chat_member.status == "creator" or chat_member.status == "administrator":
+    
+    if check_subscription(await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)):
         help_text = "Это бот для получения расписания. Введите /start, чтобы начать."
         if message.text == 'Помощь':
             await bot.send_message(message.from_user.id, help_text)
-    
+        
         global week_flag
         if message.text == 'Текущая неделя':
             await bot.send_message(message.from_user.id, "Выбери день недели:", reply_markup=markup)
@@ -133,15 +110,19 @@ async def message(message : types.Message):
         elif message.text == 'Назад':
             week_flag = False
             await bot.send_message(message.from_user.id, 'Меню:', reply_markup=keyboard)
-        return True
-        # Allow the user to use the bot
-        # ...
     else:
-        # Ask the user to join the channel
-        markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[
-            [InlineKeyboardButton(text='Ссылка на канал', url='https://t.me/+JuOvXXesnpw2NDZi')]
-            ])
-        await message.reply("Please subscribe to the channel first!", reply_markup=markup)
-        # Set the custom state
-        await SubscribeState.waiting_for_subscription.set()
+        markup = await channel_sub_btn()
+        await bot.send_message(message.from_user.id, "Для использования бота необходимо подписаться на канал", reply_markup=markup)
+
+
+
+
+
+
+
+
+    
+        
+
+
 
