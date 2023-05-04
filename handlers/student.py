@@ -1,4 +1,6 @@
-from config import host, user, password, db_name, CHANNEL_ID
+import sys
+sys.path.append('/ScheduleBot')
+from config import host, user, password, db_name
 from aiogram import types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from loader import dp, bot
@@ -116,7 +118,7 @@ async def message(message : types.Message):
 
 
 
-#
+
 
 
 
