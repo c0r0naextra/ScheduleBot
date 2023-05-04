@@ -3,6 +3,7 @@ sys.path.append('/ScheduleBot')
 from config import host, user, password, db_name
 from aiogram import types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+sys.path.append('/ScheduleBot')
 from loader import dp, bot
 from keyboards.date import calendar, date
 from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, change_to_schedule_kb, default_kb, channel_sub_btn
