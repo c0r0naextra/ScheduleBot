@@ -1,6 +1,6 @@
 from keyboards.date import calendar, date
 import pymysql
-from config import host, user, password, db_name
+from data.config import host, user, password, db_name
 from aiogram.types import ReplyKeyboardMarkup, InlineKeyboardMarkup
 from aiogram import types
 import json

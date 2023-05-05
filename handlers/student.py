@@ -1,18 +1,13 @@
-import sys
-sys.path.append('/ScheduleBot')
-from config import host, user, password, db_name
+from data.config import host, user, password, db_name
 from aiogram import types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-sys.path.append('/ScheduleBot')
 from loader import dp, bot
-from keyboards.date import calendar, date
 from keyboards.reg_keyboards import faculty_kb, year_kb, menu_cd, change_to_schedule_kb, default_kb, channel_sub_btn
 from typing import Union
-from db.database import create_connection, join_maker, schedule_kb, send_message, week_day_id_maker, group_id_creator, year_id_creator, group_kb, faculty_year_group_returner
+from db.database import create_connection, schedule_kb, send_message, group_id_creator, year_id_creator, group_kb
+from datetime import datetime
+import time
 
 
-
-global connection
 connection = create_connection(host, user, password, db_name)
 
 
@@ -36,18 +31,23 @@ async def menu(message : types.Message):
 
 
 async def faculty_list(message : types.Message, **kwargs):
-    markup = await faculty_kb()
-    help_keyboard = await default_kb()
+    start = datetime.now()
     global tg_id
     global first_name
     global username
-
+    markup = await faculty_kb()
+    help_keyboard = await default_kb()
     tg_id = message.from_user.id
     first_name = message.from_user.first_name
     username = message.from_user.username
 
     await bot.send_message(message.from_user.id, "Приветствую!", reply_markup=help_keyboard)
     await bot.send_message(message.from_user.id, "Для начала пройди регистрацию (факультет, курс, группа)", reply_markup=markup)
+    time.sleep(1)
+    end = datetime.now()
+ 
+    print(f"Time taken (faculty_list) in (hh:mm:ss.ms) is {end - start}")
+ 
 
 
 async def year_list(query: types.CallbackQuery, faculty, **kwargs):
@@ -74,6 +74,7 @@ async def schedule_menu(message : Union[types.Message, types.CallbackQuery], fac
 
 @dp.callback_query_handler(menu_cd.filter())
 async def navigate(query : types.CallbackQuery, callback_data: dict):
+    
     await query.answer()
     current_level = callback_data.get('level')
     faculty = callback_data.get('faculty')

@@ -10,9 +10,9 @@ def make_cd(level, faculty='0', year='0', group='0'):
     return menu_cd.new(level=level, faculty=faculty, year=year, group=group)
 
 
-async def channel_sub_btn():
-    markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[[InlineKeyboardButton(text='Ссылка на канал', url='https://t.me/+JuOvXXesnpw2NDZi')]])
-    return markup
+# async def channel_sub_btn():
+#     markup = InlineKeyboardMarkup(row_width=1, inline_keyboard=[[InlineKeyboardButton(text='Ссылка на канал', url='https://t.me/+JuOvXXesnpw2NDZi')]])
+#     return markup
 
 async def default_kb():
     help_keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
